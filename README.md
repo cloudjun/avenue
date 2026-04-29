@@ -100,6 +100,16 @@ Preview deployments are provided by **Vercel** — every PR gets an ephemeral UR
 - All server logs include `service`, `env`, and can be extended with `childLogger({ requestId, userId })`
 - Sensitive fields (`authorization`, `cookie`, `password`, `token`) are automatically redacted
 
+## AI processing cost (AVE-4)
+
+Per-note AI processing stores an estimated cost in `notes.metadata.aiPipeline.estimatedCostUsd`.
+
+- Embeddings: `text-embedding-3-small` at `$0.00002 / 1K` input tokens
+- Tagging input: `claude-haiku-4-5-20251001` at `$0.0008 / 1K` input tokens
+- Tagging output: `claude-haiku-4-5-20251001` at `$0.004 / 1K` output tokens
+
+Token estimation uses `~1 token = 4 characters` for deterministic accounting in the async pipeline. Update the constants in `apps/api/src/lib/ai-pipeline.ts` if provider pricing changes.
+
 ## Architecture decisions
 
 - **Monorepo with pnpm workspaces**: avoids duplication of TS config, linting, and shared packages across apps
@@ -107,3 +117,5 @@ Preview deployments are provided by **Vercel** — every PR gets an ephemeral UR
 - **pgvector over Pinecone/Weaviate**: one fewer managed service; Supabase bundles pgvector; avoids vendor lock-in
 - **Pino over Winston**: 5-8× faster, smaller bundle, better structured output for cloud log aggregators
 - **AI pipeline in a separate package**: keeps the retrieval logic testable without spinning up Next.js; makes it easy to move to a worker/queue later
+
+- [ ] AVE-6 preview deployment verification marker (2026-04-29T05:28:53Z)
