@@ -7,6 +7,7 @@ The #1 AI note-taking app that becomes your second brain.
 ```
 avenue/
 ├── apps/
+│   ├── api/                # Fastify API for note ingest/retrieval + auth
 │   └── web/                # Next.js 14 app (App Router)
 ├── packages/
 │   ├── ai/                 # Chunking, embedding, retrieval pipeline
@@ -56,8 +57,132 @@ cp .env.example .env.local
 # Edit .env.local with your secrets
 pnpm db:generate   # generate migration SQL
 pnpm db:migrate    # apply migrations
+pnpm api:dev       # start API server on http://localhost:4000
 pnpm dev           # start Next.js dev server on http://localhost:3000
 ```
+
+## Board run/test checklist
+
+Use this when you need a fast confidence check before a board review.
+
+### 1) Boot the stack
+
+```bash
+pnpm install
+cp .env.example .env.local
+# Fill in DATABASE_URL, ANTHROPIC_API_KEY, OPENAI_API_KEY, JWT_SECRET
+
+pnpm db:migrate
+PORT=4000 pnpm api:dev
+```
+
+In a second terminal:
+
+```bash
+pnpm dev
+```
+
+Expected:
+
+- API responds at `http://localhost:4000/health` with `{"ok":true}`
+- Web responds at `http://localhost:3000`
+
+### 1.1) Use the functional web UI
+
+The home page (`apps/web/app/page.tsx`) now provides:
+
+- Account bootstrap (`register` + `login`) against `/auth/register` and `/auth/login`
+- Note creation with text, optional title, and optional source URL
+- Notes list refresh via `GET /notes`
+- Hybrid search via `GET /notes/search?mode=hybrid`
+
+Usage flow:
+
+1. Open `http://localhost:3000`.
+2. Register with an email + password (or login with an existing account).
+3. Create one or more notes in the **Create note** panel.
+4. Use **Hybrid search** to query semantically/keyword-ranked results.
+5. Use **Refresh** in **Notes list** to pull the latest saved notes.
+
+If your API is not on `http://localhost:4000`, set `NEXT_PUBLIC_API_BASE_URL` in `.env.local` for `apps/web`.
+
+### 2) Run the automated test gates
+
+```bash
+pnpm lint
+pnpm type-check
+pnpm test
+```
+
+Expected:
+
+- Lint exits `0`
+- Type-check exits `0`
+- Vitest passes in `apps/api`, `packages/ai`, `packages/logger`, and `apps/web`
+
+### 3) Run a minimal API smoke test
+
+```bash
+curl -s http://localhost:4000/health
+```
+
+Expected:
+
+```json
+{"ok":true}
+```
+
+Optional deeper check (requires API env vars and a running database):
+
+```bash
+TOKEN=$(curl -s -X POST http://localhost:4000/auth/register \
+  -H 'Content-Type: application/json' \
+  -d '{"email":"board-smoke@example.com","password":"board-smoke-pass-123"}' | jq -r '.token')
+
+curl -s -X POST http://localhost:4000/notes \
+  -H "Authorization: Bearer $TOKEN" \
+  -H 'Content-Type: application/json' \
+  -d '{"content":"Board smoke test note"}'
+```
+
+Expected:
+
+- Returns a note id and persisted note payload
+- Background AI pipeline runs asynchronously and does not block write acknowledgement
+
+## Web note-taking UI (AVE-13)
+
+The home page at `apps/web/app/page.tsx` now provides a basic functional note UI wired to the existing API.
+
+### What it supports
+
+- Account bootstrap in-app (register) to get a JWT session token
+- Create notes with plain text content and optional title
+- Create notes with optional `source_url` (URL enrichment remains async in API)
+- List existing notes for the signed-in user
+- Hybrid semantic/keyword search via `/notes/search?mode=hybrid`
+- Delete notes
+
+### How to use
+
+1. Start API (`PORT=4000 pnpm api:dev`) and web (`pnpm dev`).
+2. Open `http://localhost:3000`.
+3. Create an account in the UI to start a session.
+4. Create notes in the composer (text required, URL optional).
+5. Use the search bar to run hybrid retrieval over your notes.
+6. Delete notes from the list when needed.
+
+### API integration details
+
+The web app calls same-origin Next.js route handlers that proxy to the Fastify API:
+
+- `POST /api/auth/register` -> `POST /auth/register`
+- `GET /api/notes` -> `GET /notes`
+- `POST /api/notes` -> `POST /notes`
+- `GET /api/notes/search` -> `GET /notes/search`
+- `DELETE /api/notes/:id` -> `DELETE /notes/:id`
+
+Server-side proxying avoids browser CORS coupling and keeps backend host configuration in one place (`AVENUE_API_URL`, default `http://localhost:4000`).
 
 ## CI
 
