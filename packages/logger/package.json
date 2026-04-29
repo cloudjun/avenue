@@ -2,8 +2,15 @@
   "name": "@avenue/logger",
   "version": "0.0.0",
   "private": true,
+  "type": "module",
   "main": "./src/index.ts",
   "types": "./src/index.ts",
+  "exports": {
+    ".": {
+      "import": "./src/index.ts",
+      "types": "./src/index.ts"
+    }
+  },
   "scripts": {
     "lint": "eslint src --ext .ts",
     "type-check": "tsc --noEmit",
