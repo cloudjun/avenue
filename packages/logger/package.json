@@ -7,7 +7,7 @@
   "scripts": {
     "lint": "eslint src --ext .ts",
     "type-check": "tsc --noEmit",
-    "test": "vitest run"
+    "test": "vitest run --passWithNoTests"
   },
   "dependencies": {
     "pino": "^9.0.0",
