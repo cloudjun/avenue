@@ -4,12 +4,14 @@ const isDev = process.env.NODE_ENV !== 'production'
 
 export const logger = pino({
   level: process.env.LOG_LEVEL ?? (isDev ? 'debug' : 'info'),
-  transport: isDev
+  ...(isDev
     ? {
-        target: 'pino-pretty',
-        options: { colorize: true, ignore: 'pid,hostname' },
+        transport: {
+          target: 'pino-pretty',
+          options: { colorize: true, ignore: 'pid,hostname' },
+        },
       }
-    : undefined,
+    : {}),
   base: {
     service: process.env.SERVICE_NAME ?? 'avenue',
     env: process.env.NODE_ENV ?? 'development',
