@@ -1,6 +1,7 @@
 'use client'
 
 import { FormEvent, useEffect, useMemo, useState } from 'react'
+import { getErrorMessage, parseJson } from '@/lib/http'
 
 type Note = {
   id: string
@@ -15,11 +16,6 @@ type AuthResponse = {
 }
 
 const TOKEN_KEY = 'avenue.auth.token.v1'
-
-async function parseJson(response: Response) {
-  const text = await response.text()
-  return text ? JSON.parse(text) : null
-}
 
 export default function HomePage() {
   const [token, setToken] = useState<string | null>(null)
@@ -74,9 +70,9 @@ export default function HomePage() {
         headers: { 'content-type': 'application/json' },
         body: JSON.stringify({ email, password }),
       })
-      const data = (await parseJson(response)) as AuthResponse | { message?: string }
-      if (!response.ok || !('token' in data)) {
-        throw new Error((data as { message?: string }).message ?? 'Registration failed')
+      const data = (await parseJson(response)) as AuthResponse | null
+      if (!response.ok || !data || typeof data !== 'object' || !('token' in data)) {
+        throw new Error(getErrorMessage(data, 'Registration failed'))
       }
       window.localStorage.setItem(TOKEN_KEY, data.token)
       setToken(data.token)
@@ -112,9 +108,9 @@ export default function HomePage() {
         body: JSON.stringify(payload),
       })
 
-      const data = (await parseJson(response)) as { note?: Note; message?: string }
-      if (!response.ok || !data.note) {
-        throw new Error(data.message ?? 'Failed to save note')
+      const data = (await parseJson(response)) as { note?: Note } | null
+      if (!response.ok || !data || typeof data !== 'object' || !data.note) {
+        throw new Error(getErrorMessage(data, 'Failed to save note'))
       }
 
       setNotes((prev) => [data.note as Note, ...prev])
