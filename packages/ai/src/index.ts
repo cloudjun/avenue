@@ -1,4 +1,5 @@
 export { chunk } from './chunker'
-export { embed, embedBatch } from './embedder'
+export { embed, embedBatch, embedText } from './embedder'
 export { retrieve } from './retriever'
+export { tagNote } from './tagger'
 export type { Chunk, EmbeddedChunk, RetrievalResult } from './types'
