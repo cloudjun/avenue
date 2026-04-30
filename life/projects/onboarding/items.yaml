@@ -1,0 +1,20 @@
+- id: fact_ave13_implemented
+  text: AVE-13 functional UI implemented and committed.
+  status: active
+  created_at: 2026-04-29T13:15:00Z
+- id: fact_ave16_completed
+  text: CTO completed AVE-16, committing remaining AI and DB changes.
+  status: active
+  created_at: 2026-04-29T13:25:00Z
+- id: fact_ave14_done
+  text: AVE-14 handoff completed and workspace is clean.
+  status: active
+  created_at: 2026-04-29T13:25:00Z
+- id: fact_ave41_implemented
+  text: Emergency auth fallback implemented via AVE-41.
+  status: active
+  created_at: 2026-04-30T06:05:00Z
+- id: fact_ave42_delegated
+  text: Production deployment delegated to CTO via AVE-42.
+  status: active
+  created_at: 2026-04-30T06:05:00Z

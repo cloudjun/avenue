@@ -16,9 +16,11 @@ type AuthResponse = {
 }
 
 const TOKEN_KEY = 'avenue.auth.token.v1'
+const AUTH_DISABLED = process.env.NEXT_PUBLIC_AUTH_DISABLED === 'true'
 
 export default function HomePage() {
   const [token, setToken] = useState<string | null>(null)
+  const [username, setUsername] = useState('')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [notes, setNotes] = useState<Note[]>([])
@@ -79,6 +81,31 @@ export default function HomePage() {
       setPassword('')
     } catch (registerError) {
       setError(registerError instanceof Error ? registerError.message : 'Registration failed')
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  const onGuestStart = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault()
+    setBusy(true)
+    setError(null)
+
+    try {
+      const response = await fetch('/api/auth/guest', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ username }),
+      })
+      const data = (await parseJson(response)) as AuthResponse | null
+      if (!response.ok || !data || typeof data !== 'object' || !('token' in data)) {
+        throw new Error(getErrorMessage(data, 'Guest login failed'))
+      }
+      window.localStorage.setItem(TOKEN_KEY, data.token)
+      setToken(data.token)
+      setUsername('')
+    } catch (guestError) {
+      setError(guestError instanceof Error ? guestError.message : 'Guest login failed')
     } finally {
       setBusy(false)
     }
@@ -188,27 +215,43 @@ export default function HomePage() {
 
       {!token ? (
         <section className="panel">
-          <h2>Start Session</h2>
-          <form onSubmit={onRegister} className="stack">
-            <input
-              type="email"
-              placeholder="Email"
-              value={email}
-              onChange={(event) => setEmail(event.target.value)}
-              required
-            />
-            <input
-              type="password"
-              placeholder="Password"
-              value={password}
-              onChange={(event) => setPassword(event.target.value)}
-              required
-              minLength={8}
-            />
-            <button type="submit" disabled={busy}>
-              Create account
-            </button>
-          </form>
+          <h2>{AUTH_DISABLED ? 'Guest Session' : 'Start Session'}</h2>
+          {AUTH_DISABLED ? (
+            <form onSubmit={onGuestStart} className="stack">
+              <input
+                type="text"
+                placeholder="Username"
+                value={username}
+                onChange={(event) => setUsername(event.target.value)}
+                required
+                minLength={2}
+              />
+              <button type="submit" disabled={busy}>
+                Continue as guest
+              </button>
+            </form>
+          ) : (
+            <form onSubmit={onRegister} className="stack">
+              <input
+                type="email"
+                placeholder="Email"
+                value={email}
+                onChange={(event) => setEmail(event.target.value)}
+                required
+              />
+              <input
+                type="password"
+                placeholder="Password"
+                value={password}
+                onChange={(event) => setPassword(event.target.value)}
+                required
+                minLength={8}
+              />
+              <button type="submit" disabled={busy}>
+                Create account
+              </button>
+            </form>
+          )}
         </section>
       ) : (
         <>
