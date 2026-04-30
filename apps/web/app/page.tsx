@@ -16,7 +16,7 @@ type AuthResponse = {
 }
 
 const TOKEN_KEY = 'avenue.auth.token.v1'
-const AUTH_DISABLED = process.env.NEXT_PUBLIC_AUTH_DISABLED === 'true'
+const AUTH_DISABLED = true // process.env.NEXT_PUBLIC_AUTH_DISABLED === 'true'
 
 export default function HomePage() {
   const [token, setToken] = useState<string | null>(null)
